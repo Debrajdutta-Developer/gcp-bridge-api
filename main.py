@@ -1,14 +1,19 @@
-import os
+import os, json
 from flask import Flask, request, jsonify
 from google.cloud import storage
+from google.oauth2 import service_account
 
 app = Flask(__name__)
+MY_SECRET_KEY = os.environ.get("MY_SECRET_KEY", "Chair@3600")
 
-# এই পাসওয়ার্ডটি ChatGPT Actions-এ বসাতে হবে
-MY_SECRET_KEY = "Chai@3600"
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
-storage_client = storage.Client()
+# Render-এর Environment Variable বা লোকাল ফাইল থেকে ক্রেডেনশিয়াল নেওয়া
+if os.environ.get("GCP_CREDENTIALS_JSON"):
+    creds_info = json.loads(os.environ.get("GCP_CREDENTIALS_JSON"))
+    creds = service_account.Credentials.from_service_account_info(creds_info)
+    storage_client = storage.Client(credentials=creds)
+else:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
+    storage_client = storage.Client()
 
 @app.before_request
 def check_auth():
